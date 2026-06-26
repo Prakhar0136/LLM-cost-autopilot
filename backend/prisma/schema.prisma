@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Stores the models we can route to (matches your "Model registry" table)
+model ModelRegistry {
+  id             String  @id @default(uuid())
+  model_name     String  @unique
+  provider       String
+  tier           String  // "Simple", "Moderate", "Complex"
+  in_cost_per_m  Float   // Cost per 1M input tokens
+  out_cost_per_m Float   // Cost per 1M output tokens
+  latency_avg    Int     // in milliseconds
+  role           String? // e.g., "baseline verifier"
+}
+
+// Stores live configurations for the router
+model RoutingConfig {
+  id         String @id @default(uuid())
+  tier       String @unique // "Simple", "Moderate", "Complex"
+  model_name String
+}
+
+// The core audit trail that powers all your dashboard metrics
+model RequestLog {
+  id             String   @id @default(uuid())
+  prompt_snippet String
+  tier           String   // "Simple", "Moderate", "Complex"
+  model_used     String
+  cost_actual    Float
+  cost_baseline  Float
+  saved_pct      Float
+  latency_ms     Int
+  quality_score  Float?
+  status         String   // "verified", "escalated", "pending"
+  created_at     DateTime @default(now())
+}
