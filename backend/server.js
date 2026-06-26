@@ -2,8 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import { GoogleGenAI } from '@google/generative-ai';
-
+import Groq from "groq-sdk";
 dotenv.config();
 
 const app = express();
@@ -11,20 +10,45 @@ const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Gemini SDK
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
+});
 
 // Seed Models into Database if empty
 async function seedModels() {
     const count = await prisma.modelRegistry.count();
+
     if (count === 0) {
         await prisma.modelRegistry.createMany({
             data: [
-                { model_name: "gemini-2.5-flash-lite", provider: "Google", tier: "simple", in_cost_per_m: 0.075, out_cost_per_m: 0.30, latency_avg: 400 },
-                { model_name: "gemini-2.5-flash", provider: "Google", tier: "moderate", in_cost_per_m: 0.15, out_cost_per_m: 0.60, latency_avg: 600 },
-                { model_name: "gemini-2.5-pro", provider: "Google", tier: "complex", in_cost_per_m: 1.25, out_cost_per_m: 5.00, latency_avg: 1200, role: "baseline verifier" }
+                {
+                    model_name: "llama-3.1-8b-instant",
+                    provider: "Groq",
+                    tier: "simple",
+                    in_cost_per_m: 0,
+                    out_cost_per_m: 0,
+                    latency_avg: 80
+                },
+                {
+                    model_name: "llama-3.3-70b-versatile",
+                    provider: "Groq",
+                    tier: "moderate",
+                    in_cost_per_m: 0,
+                    out_cost_per_m: 0,
+                    latency_avg: 250
+                },
+                {
+                    model_name: "deepseek-r1-distill-llama-70b",
+                    provider: "Groq",
+                    tier: "complex",
+                    in_cost_per_m: 0,
+                    out_cost_per_m: 0,
+                    latency_avg: 500,
+                    role: "baseline verifier"
+                }
             ]
         });
+
         console.log("🌱 Database seeded with model pricing configurations.");
     }
 }
@@ -53,15 +77,26 @@ app.post('/api/v1/completions', async (req, res) => {
 
         // 3. Dispatch execution to the chosen LLM via its provider adapter
         console.log(`🔀 Routing prompt to [${targetModel.model_name}] due to [${tier}] classification.`);
-        const modelInstance = ai.getGenerativeModel({ model: targetModel.model_name });
 
-        // Simple rough token estimation logic (1 word ≈ 1.3 tokens)
+        // Estimate input tokens (roughly 1 word ≈ 1.3 tokens)
         const estimatedInputTokens = prompt.split(/\s+/).length * 1.3;
 
-        const result = await modelInstance.generateContent(prompt);
-        const responseText = result.response.text();
+        const completion = await groq.chat.completions.create({
+            model: targetModel.model_name,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.7
+        });
 
+        const responseText = completion.choices[0].message.content ?? "";
+
+        // Estimate output tokens
         const estimatedOutputTokens = responseText.split(/\s+/).length * 1.3;
+
         const latency = Date.now() - startTime;
 
         // 4. Financial Calculations (Cost per 1M tokens)
