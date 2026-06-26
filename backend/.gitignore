@@ -1,5 +1,34 @@
-node_modules
-# Keep environment variables out of version control
-.env
+# Databases
+*.db
+*.db-journal
 
-/generated/prisma
+# Environment Secrets
+.env
+.env.local
+
+# Node/React Dependency Caches
+node_modules/
+dist/
+.eslintcache
+
+# Python Dependency Caches
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+
+# System Files
+.DS_Store
+Thumbs.db
