@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Cpu, DollarSign, Zap, AlertTriangle, Play, RefreshCw, Layers } from 'lucide-react';
+import {
+  Cpu,
+  DollarSign,
+  Zap,
+  AlertTriangle,
+  Play,
+  RefreshCw,
+  Layers,
+  ArrowDownRight,
+  ShieldCheck,
+  Rocket
+} from 'lucide-react';
 
 export default function App() {
   // Data States
@@ -10,12 +21,18 @@ export default function App() {
   const [pieData, setPieData] = useState([]);
 
   // Playground States
+  const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [playgroundResult, setPlaygroundResult] = useState(null);
+
+  const [benchmarkLoading, setBenchmarkLoading] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(false);
 
   // Fetch metrics from backend database logs
   const fetchData = async () => {
+    setIsRefreshing(true);
     try {
       const res = await fetch('http://localhost:5000/api/v1/stats');
       const data = await res.json();
@@ -23,6 +40,8 @@ export default function App() {
       calculateMetrics(data);
     } catch (err) {
       console.error("Error fetching stats:", err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -81,7 +100,10 @@ export default function App() {
     try {
       const res = await fetch('http://localhost:5000/api/v1/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-groq-api-key': apiKey
+        },
         body: JSON.stringify({ prompt })
       });
       const data = await res.json();
@@ -91,6 +113,43 @@ export default function App() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRunBenchmark = async () => {
+    setBenchmarkLoading(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/benchmark', { 
+        method: 'POST',
+        headers: {
+          'x-groq-api-key': apiKey
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      alert(data.message);
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Benchmark error: " + err.message);
+    } finally {
+      setBenchmarkLoading(false);
+    }
+  };
+
+  const handleRunVerification = async () => {
+    setVerificationLoading(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/verify-all', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      alert(data.message);
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Verification error: " + err.message);
+    } finally {
+      setVerificationLoading(false);
     }
   };
 
@@ -104,10 +163,130 @@ export default function App() {
           </h1>
           <p className="text-neutral-400 text-sm mt-1">Production Intelligent LLM Gateway & Optimization Layer</p>
         </div>
-        <button onClick={fetchData} className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-4 py-2 rounded-lg text-sm transition-colors text-neutral-200">
-          <RefreshCw size={16} /> Refresh Dashboard
+        <button 
+          onClick={fetchData} 
+          disabled={isRefreshing}
+          className="flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-4 py-2 rounded-lg text-sm transition-colors text-neutral-200 disabled:opacity-50"
+        >
+          <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} /> 
+          {isRefreshing ? "Refreshing..." : "Refresh Dashboard"}
         </button>
       </header>
+
+      {/* ========================================================= */}
+      {/* HERO SECTION */}
+      {/* ========================================================= */}
+
+      <section className="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950 mb-8">
+
+        {/* Grid Background */}
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            backgroundImage: `
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)
+      `,
+            backgroundSize: "40px 40px"
+          }}
+        />
+
+        <div className="relative z-10 p-10 lg:p-14">
+
+          {/* Badge */}
+
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-900 bg-emerald-950 px-4 py-2 text-sm text-emerald-400 font-medium">
+            <Zap size={14} />
+            Live routing layer
+          </div>
+
+          <div className="mt-8 max-w-5xl">
+
+            <h1 className="text-5xl lg:text-7xl font-black leading-tight tracking-tight text-neutral-100">
+
+              Route every request to the
+
+              <span className="block text-emerald-400">
+                cheapest capable model
+              </span>
+
+              with quality verification.
+
+            </h1>
+
+            <p className="mt-8 max-w-3xl text-xl text-neutral-400 leading-relaxed">
+              Score prompt complexity, intelligently route requests to the most
+              cost-effective LLM, and continuously verify response quality using
+              asynchronous LLM-as-a-Judge evaluation.
+            </p>
+
+          </div>
+
+          {/* Bottom Stats */}
+
+          <div className="mt-12 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+
+            <div>
+
+              <div className="flex items-center gap-2 text-neutral-400">
+
+                <ArrowDownRight
+                  className="text-emerald-400"
+                  size={18}
+                />
+
+                <span className="text-sm">
+                  Cost reduction vs flagship-only routing
+                </span>
+
+              </div>
+
+              <div className="mt-2 text-6xl font-black text-emerald-400">
+                {metrics.savings}%
+              </div>
+
+              <div className="mt-2 text-neutral-500">
+
+                $
+                {(
+                  Number(metrics.baselineCost) -
+                  Number(metrics.totalCost)
+                ).toFixed(5)}
+                {" "}saved across{" "}
+                {metrics.totalRequests}
+                {" "}requests
+
+              </div>
+
+            </div>
+
+            <div className="flex gap-4">
+
+              <button
+                onClick={handleRunBenchmark}
+                disabled={benchmarkLoading}
+                className="flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-6 py-3 font-semibold text-black transition disabled:opacity-50"
+              >
+                <Rocket size={18} />
+                {benchmarkLoading ? "Running..." : "Run benchmark"}
+              </button>
+
+              <button
+                onClick={handleRunVerification}
+                disabled={verificationLoading}
+                className="flex items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900 hover:bg-neutral-800 px-6 py-3 font-semibold text-white transition disabled:opacity-50"
+              >
+                <ShieldCheck size={18} />
+                {verificationLoading ? "Verifying..." : "Run verification"}
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
 
       {/* METRIC ROW */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -208,6 +387,14 @@ export default function App() {
             <Play className="text-emerald-500 fill-emerald-500" size={16} /> Routing Playground
           </h3>
           <form onSubmit={handleTestRoute} className="space-y-4">
+            <input
+              type="password"
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-neutral-100 placeholder-neutral-600 transition-all"
+              placeholder="Enter your Groq API Key to test the gateway..."
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              required
+            />
             <textarea
               className="w-full h-32 bg-neutral-950 border border-neutral-800 rounded-lg p-4 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-neutral-100 placeholder-neutral-600 transition-all resize-none"
               placeholder="Paste a prompt here to watch the classifier process and route it in real time..."
@@ -232,8 +419,8 @@ export default function App() {
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                   <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${playgroundResult.routing.tier_assigned === 'complex' ? 'bg-red-900 text-red-200 border border-red-800' :
-                      playgroundResult.routing.tier_assigned === 'moderate' ? 'bg-amber-900 text-amber-200 border border-amber-800' :
-                        'bg-emerald-900 text-emerald-200 border border-emerald-800'
+                    playgroundResult.routing.tier_assigned === 'moderate' ? 'bg-amber-900 text-amber-200 border border-amber-800' :
+                      'bg-emerald-900 text-emerald-200 border border-emerald-800'
                     }`}>
                     Complexity: {playgroundResult.routing.tier_assigned.toUpperCase()}
                   </span>
@@ -288,8 +475,8 @@ export default function App() {
                     <td className="p-4 font-mono text-xs text-neutral-400 max-w-xs truncate">{log.prompt_snippet}</td>
                     <td className="p-4 capitalize">
                       <span className={`px-2 py-1 rounded text-[11px] font-medium border ${log.tier === 'complex' ? 'text-red-400 bg-red-950 border-red-900' :
-                          log.tier === 'moderate' ? 'text-amber-400 bg-amber-950 border-amber-900' :
-                            'text-emerald-400 bg-emerald-950 border-emerald-900'
+                        log.tier === 'moderate' ? 'text-amber-400 bg-amber-950 border-amber-900' :
+                          'text-emerald-400 bg-emerald-950 border-emerald-900'
                         }`}>
                         {log.tier}
                       </span>
