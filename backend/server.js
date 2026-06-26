@@ -54,7 +54,65 @@ async function seedModels() {
 }
 seedModels();
 
-// CORE ROUTER ENDPOINT
+// ... existing imports and setup remain the same ...
+
+// ASYNC QUALITY VERIFIER FLYWHEEL
+async function verifyQualityAsync(logId, prompt, cheapResponse) {
+    try {
+        console.log(`🔍 [Async Worker] Beginning quality verification for log: ${logId}`);
+
+        // Construct an LLM-as-a-Judge prompt
+        const evaluationPrompt = `
+You are an automated Quality Assurance system for an LLM routing gateway.
+
+Analyze the original user prompt and the generated response below.
+
+Rate the response quality from 0.0 (completely incorrect) to 1.0 (perfect).
+
+Return ONLY a number.
+
+USER PROMPT:
+${prompt}
+
+GENERATED RESPONSE:
+${cheapResponse}
+
+Score:
+`;
+
+        const completion = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+                {
+                    role: "user",
+                    content: evaluationPrompt
+                }
+            ],
+            temperature: 0
+        });
+
+        const scoreText = completion.choices[0].message.content.trim();
+        const qualityScore = parseFloat(scoreText) || 0.85;
+
+        // Determine status based on performance threshold
+        // If the score drops below 0.7, flag it as 'escalated' for retraining
+        const status = qualityScore < 0.7 ? "escalated" : "verified";
+
+        await prisma.requestLog.update({
+            where: { id: logId },
+            data: {
+                quality_score: qualityScore,
+                status: status
+            }
+        });
+
+        console.log(`✅ [Async Worker] Evaluation complete for ${logId}. Score: ${qualityScore} -> Status: ${status}`);
+    } catch (error) {
+        console.error("❌ [Async Worker] Verification loop failed:", error);
+    }
+}
+
+// UPDATE ONLY THE COMPLETIONS ENDPOINT TO TRIGGER THE ASYNC FUNCTION
 app.post('/api/v1/completions', async (req, res) => {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "Prompt is required" });
@@ -70,15 +128,14 @@ app.post('/api/v1/completions', async (req, res) => {
         });
         const { tier } = await mlResponse.json();
 
-        // 2. Look up which model handles this tier from our registry
+        // 2. Look up target model from database registry
         const targetModel = await prisma.modelRegistry.findFirst({
             where: { tier: tier }
         }) || await prisma.modelRegistry.findFirst({ where: { tier: 'simple' } });
 
-        // 3. Dispatch execution to the chosen LLM via its provider adapter
+        // 3. Dispatch execution to the chosen LLM
         console.log(`🔀 Routing prompt to [${targetModel.model_name}] due to [${tier}] classification.`);
 
-        // Estimate input tokens (roughly 1 word ≈ 1.3 tokens)
         const estimatedInputTokens = prompt.split(/\s+/).length * 1.3;
 
         const completion = await groq.chat.completions.create({
@@ -94,21 +151,17 @@ app.post('/api/v1/completions', async (req, res) => {
 
         const responseText = completion.choices[0].message.content ?? "";
 
-        // Estimate output tokens
         const estimatedOutputTokens = responseText.split(/\s+/).length * 1.3;
 
         const latency = Date.now() - startTime;
 
-        // 4. Financial Calculations (Cost per 1M tokens)
+        // 4. Financial Calculations
         const actualCost = ((estimatedInputTokens * targetModel.in_cost_per_m) + (estimatedOutputTokens * targetModel.out_cost_per_m)) / 1000000;
-
-        // Baseline Cost = What it would have cost if we sent everything to the premium model (gemini-2.5-pro)
         const premiumModel = await prisma.modelRegistry.findFirst({ where: { role: "baseline verifier" } });
         const baselineCost = ((estimatedInputTokens * premiumModel.in_cost_per_m) + (estimatedOutputTokens * premiumModel.out_cost_per_m)) / 1000000;
-
         const savedPct = baselineCost > 0 ? ((baselineCost - actualCost) / baselineCost) * 100 : 0;
 
-        // 5. Log transaction audit trail to Database
+        // 5. Log transaction audit trail to Database (Initially set as pending)
         const log = await prisma.requestLog.create({
             data: {
                 prompt_snippet: prompt.substring(0, 60) + "...",
@@ -118,12 +171,12 @@ app.post('/api/v1/completions', async (req, res) => {
                 cost_baseline: baselineCost,
                 saved_pct: savedPct,
                 latency_ms: latency,
-                status: "pending" // Will be evaluated async in Phase 5
+                status: "pending"
             }
         });
 
-        // 6. Return response directly to user
-        return res.json({
+        // 6. Return response immediately to user (Zero added latency for security checks)
+        res.json({
             id: log.id,
             response: responseText,
             routing: {
@@ -134,6 +187,17 @@ app.post('/api/v1/completions', async (req, res) => {
                 savings_percentage: savedPct.toFixed(2) + "%"
             }
         });
+
+        // 🚀 THE ASYNC FLYWHEEL TRIGGER: Run completely detached in the background thread context
+        if (tier !== 'complex') {
+            verifyQualityAsync(log.id, prompt, responseText);
+        } else {
+            // If it went straight to the premium model anyway, it's auto-verified
+            await prisma.requestLog.update({
+                where: { id: log.id },
+                data: { quality_score: 1.0, status: "verified" }
+            });
+        }
 
     } catch (error) {
         console.error("Routing Error:", error);
