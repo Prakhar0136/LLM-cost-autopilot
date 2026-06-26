@@ -1,125 +1,369 @@
-# LLM Cost Autopilot 🚀
+# 🚀 LLM Cost Autopilot
 
-An enterprise-grade, predictive LLM gateway, routing proxy, and live optimization layer. The platform intercepts incoming user prompts, evaluates their cognitive and structural complexity using a local high-performance machine learning microservice, and dynamically shifts payloads to the most cost-efficient capable model. 
+> **Enterprise-grade Intelligent LLM Routing Gateway with Predictive Prompt Classification, Dynamic Model Selection, Cost Optimization, and Asynchronous Quality Verification.**
 
-Featuring a **Zero-Added-Latency API Gateway**, an **Asynchronous Quality Verification Flywheel (LLM-as-a-Judge)**, and a **Pixel-Perfect Telemetry Dashboard**, this system demonstrates how an enterprise can slash production model spend by up to 80% while maintaining absolute semantic response parity.
+LLM Cost Autopilot is an intelligent API gateway that sits between your application and multiple Large Language Models (LLMs). Instead of sending every request to the largest and most expensive model, it predicts the complexity of each prompt using a locally hosted Machine Learning classifier and automatically routes it to the most cost-efficient model capable of producing high-quality results.
+
+The platform combines:
+
+- 🧠 ML-powered Prompt Complexity Classification
+- 🔀 Dynamic Multi-Model Routing
+- ⚡ Zero Added API Latency
+- 📊 Live Cost Analytics
+- 🔍 Background LLM-as-a-Judge Verification
+- 📈 Enterprise Audit Logging
 
 ---
 
-## 📐 High-Level Topology
+# ✨ Features
+
+- 🚀 Intelligent Prompt Classification
+- 🔀 Dynamic Model Routing
+- 💰 Automatic Cost Optimization
+- 📊 Live Cost & Savings Dashboard
+- 🔍 Async Quality Verification
+- 📁 Full Request Audit Trail
+- 📈 Routing Analytics
+- ⚡ Ultra Low Classification Latency
+- 🧠 Local Machine Learning Inference
+- 🎯 Zero Added User Latency
+
+---
+
+# 🏗 System Architecture
 
 ```text
-             [ Outbound App Traffic ]
-                        │
-                        ▼
-           ┌─────────────────────────┐
-           │   Node.js API Gateway   │◄────────────────┐
-           └────────────┬────────────┘                 │
-                        │                              │
-         ┌──────────────┴──────────────┐               │ (Async
-         ▼                             ▼               │ Evaluation)
-┌─────────────────┐           ┌─────────────────┐      │
-│   Python ML     │           │  Prisma/SQLite  │      │
-│   Classifier    │           │  Audit Ledger   │      │
-└────────┬────────┘           └─────────────────┘      │
-         │ (Predict Tier)                              │
-         ▼                                             │
-┌──────────────────────────────────────────────────┐   │
-│               Groq Compute Matrix                │───┘
-│  - Simple: Llama-3.1-8b-instant                  │
-│  - Moderate: Mixtral-8x7b-32768                  │
-│  - Complex: Llama-3.3-70b-versatile              │
-└──────────────────────────────────────────────────┘
+                     ┌───────────────────────────┐
+                     │      Client Application   │
+                     └──────────────┬────────────┘
+                                    │
+                                    ▼
+                     ┌───────────────────────────┐
+                     │   Node.js API Gateway     │
+                     └──────────────┬────────────┘
+                                    │
+               ┌────────────────────┴────────────────────┐
+               ▼                                         ▼
+     ┌────────────────────┐                  ┌─────────────────────┐
+     │ Python ML Service  │                  │ Prisma + SQLite DB  │
+     │ Prompt Classifier  │                  │ Audit & Analytics   │
+     └──────────┬─────────┘                  └─────────────────────┘
+                │
+                ▼
+      Predict Prompt Complexity
+                │
+                ▼
+     ┌──────────────────────────────────────────────┐
+     │              Groq Model Router               │
+     │                                              │
+     │  🟢 Simple   → Llama 3.1 8B Instant           │
+     │  🟡 Moderate → Mixtral 8x7B                   │
+     │  🔴 Complex  → Llama 3.3 70B                 │
+     └──────────────────────────────────────────────┘
+                │
+                ▼
+        Return Response Immediately
+                │
+                ▼
+    Async Background Quality Verification
+```
 
-⚡ Core System Competencies
-🔀 Multi-Tier Intelligent Routing
-Incoming traffic is evaluated in real time via an internal vectorization matrix and classified into distinct operational tiers:
+---
 
-Simple Tier: Routed to llama-3.1-8b-instant. Handled at ultra-low sub-second latencies with minimal simulated token burn rates.
+# ⚙️ How It Works
 
-Moderate Tier: Routed to mixtral-8x7b-32768. Leveraged for multi-turn contextual mapping or structured summaries.
+## 1️⃣ Prompt Classification
 
-Complex Tier: Routed to llama-3.3-70b-versatile. Invoked automatically when code refactoring, mathematical execution, or high-reasoning schemas are identified.
+Every incoming prompt is first sent to a lightweight Python ML service.
 
-🔍 Async Quality Verification Flywheel
-To ensure performance integrity without adding blocking network overhead to client applications, requests processed by lower-cost tiers instantly trigger an asynchronous background evaluation loop. A flagship llama-3.3-70b-versatile instance acts as an LLM-as-a-Judge to grade responses. If semantic output quality drifts below 0.75, the gateway flags the log entry as escalated to form an ongoing active-learning retraining dataset.
+The classifier analyzes:
 
-📊 Real-Time Financial Sandbox
-The platform uses a pricing sandbox. It processes execution payloads over Groq's high-throughput developer tier for free compute, while the analytics ledger maps real token metrics against commercial enterprise rates ($2.50/1M input and $10.00/1M output for flagship models). This yields visible, real-time ROI tracking directly on the UI dashboard.
+- Prompt length
+- TF-IDF features
+- Structural complexity
+- Reasoning requirements
+- Code generation likelihood
+- Mathematical reasoning
+- Multi-step instructions
 
-🛠️ Microservice Stack Configuration
-Layer	Technology	Primary Purpose
-Gateway Proxy	Node.js (ES Modules), Express	Request orchestration, asynchronous task dispatching, billing computations
-ML Engine	Python 3.11, Flask, Scikit-Learn	Local TF-IDF Vectorization, Random Forest prompt token classification
-Data Warehouse	Prisma ORM, SQLite	High-fidelity transaction caching, configuration seeding, quality scoring ledger
-Control Room	React 18, Tailwind CSS, Recharts	Dynamic playground, routing distribution donut charts, financial analytics
-🚀 Step-by-Step Installation & Bootstrapping
-1. Repository Initialization
-Clone the repository and jump into the root tree workspace:
+The prediction latency is typically **under 15 ms**.
 
-Bash
-git clone [https://github.com/YOUR_USERNAME/llm-cost-autopilot.git](https://github.com/YOUR_USERNAME/llm-cost-autopilot.git)
+---
+
+## 2️⃣ Intelligent Model Routing
+
+Based on the predicted complexity, requests are automatically routed.
+
+| Complexity | Model | Purpose |
+|------------|-------|---------|
+| 🟢 Simple | `llama-3.1-8b-instant` | Basic Q&A, summarization, rewriting |
+| 🟡 Moderate | `mixtral-8x7b-32768` | Multi-turn reasoning, structured responses |
+| 🔴 Complex | `llama-3.3-70b-versatile` | Coding, mathematics, deep reasoning |
+
+This dramatically reduces inference cost while preserving response quality.
+
+---
+
+## 3️⃣ Zero-Latency API Gateway
+
+The API Gateway immediately returns the generated response.
+
+The user never waits for any additional verification tasks.
+
+Background processing happens completely asynchronously.
+
+---
+
+## 4️⃣ Async Quality Verification
+
+Whenever a cheaper model is used, an asynchronous verification process begins.
+
+The same prompt is evaluated by a flagship model acting as an **LLM-as-a-Judge**.
+
+The judge evaluates:
+
+- Semantic correctness
+- Completeness
+- Reasoning quality
+- Instruction following
+
+If the quality score drops below **0.75**, the request is flagged for future retraining.
+
+This creates a continuous active-learning feedback loop.
+
+---
+
+## 5️⃣ Cost Analytics
+
+Although inference is executed on Groq's free developer infrastructure, the platform simulates enterprise pricing.
+
+Each request records:
+
+- Input tokens
+- Output tokens
+- Estimated production cost
+- Savings compared to always using the flagship model
+
+The frontend displays real-time financial analytics.
+
+---
+
+# 🛠 Tech Stack
+
+| Layer | Technology | Purpose |
+|--------|------------|----------|
+| Gateway | Node.js, Express | Request routing |
+| ML Service | Python, Flask, Scikit-Learn | Prompt classification |
+| Database | Prisma ORM, SQLite | Logging & analytics |
+| Frontend | React 18, Tailwind CSS | Dashboard |
+| Charts | Recharts | Visual analytics |
+| LLM Provider | Groq API | Model inference |
+
+---
+
+# 📂 Project Structure
+
+```text
+llm-cost-autopilot/
+
+├── backend/
+│   ├── prisma/
+│   ├── routes/
+│   ├── services/
+│   ├── controllers/
+│   └── server.js
+│
+├── frontend/
+│   ├── src/
+│   ├── components/
+│   ├── pages/
+│   └── App.jsx
+│
+├── ml_service/
+│   ├── app.py
+│   ├── classifier.joblib
+│   ├── vectorizer.joblib
+│   └── requirements.txt
+│
+└── README.md
+```
+
+---
+
+# 🚀 Installation
+
+## 1. Clone Repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/llm-cost-autopilot.git
+
 cd llm-cost-autopilot
-2. Configure Environment Properties
-Create a .env file within the backend/ directory:
+```
 
-Code snippet
+---
+
+## 2. Configure Environment
+
+Create a `.env` file inside `backend/`
+
+```env
 DATABASE_URL="file:./dev.db"
-GROQ_API_KEY="your_live_groq_api_key_here"
+
+GROQ_API_KEY="your_groq_api_key"
+
 ML_SERVICE_URL="http://localhost:5001/predict"
-3. Initialize the Gateway Data Ledger
-Navigate into the backend subsystem, pull required Node components, map out the Prisma schema tracking tables, and boot the cluster proxy on port 5000:
+```
 
-Bash
+---
+
+## 3. Start Backend
+
+```bash
 cd backend
+
 npm install
+
 npx prisma db push
-npm run dev
-4. Fire Up the ML Classifier Service
-Ensure your exported .joblib model binary layers are sitting in the ml_service/ directory before initializing:
 
-Bash
+npm run dev
+```
+
+Backend runs on:
+
+```
+http://localhost:5000
+```
+
+---
+
+## 4. Start ML Service
+
+```bash
 cd ../ml_service
+
 pip install -r requirements.txt
+
 python app.py
-5. Launch the Visual Analytics Dashboard
-Open a new terminal shell to run the user interface client panel:
+```
 
-Bash
+ML Service runs on:
+
+```
+http://localhost:5001
+```
+
+---
+
+## 5. Start Frontend
+
+```bash
 cd ../frontend
+
 npm install
+
 npm run dev
-Open your browser to http://localhost:5173 to interact with the system dashboard.
+```
 
-🔌 API Gateway Interface Specifications
-Unified Completion Engine
-Your applications can treat this gateway as a transparent drop-in proxy. It returns the exact generative text completions needed, while automatically logging tracking metrics and firing verification tasks out-of-band.
+Frontend runs on:
 
-Endpoint: POST http://localhost:5000/api/v1/completions
+```
+http://localhost:5173
+```
 
-Content-Type: application/json
+---
 
-Sample Payload Request:
-JSON
+# 🔌 API
+
+## Endpoint
+
+```http
+POST /api/v1/completions
+```
+
+---
+
+## Request
+
+```json
 {
-  "prompt": "Architect an optimized React hook that manages websockets with an automated reconnect exponential backoff logic."
+    "prompt": "Architect an optimized React hook that manages WebSockets with exponential reconnect backoff."
 }
-Diagnostic Response Blueprint:
-JSON
+```
+
+---
+
+## Response
+
+```json
 {
   "id": "773a4c42-6175-4572-beab-f8e1b339766b",
-  "response": "import { useEffect, useRef } from 'react';\nexport const useWebSocket = (url) => { ... };",
+  "response": "...",
+
   "routing": {
     "tier_assigned": "complex",
     "model_executed": "llama-3.3-70b-versatile",
     "latency_ms": 1140,
-    "cost_calculated": 0.003420,
-    "savings_percentage": "0.00%"
+    "cost_calculated": 0.00342,
+    "savings_percentage": "0%"
   }
 }
-📈 System Performance Metrics
-Financial Model Overhead Reductions: Average of 65% - 85% saving over static frontier model baseline mapping.
+```
 
-Prediction Service Routing Overhead: < 15ms classification latency utilizing lightweight local vector mapping.
+---
 
-Response Quality Retention: Maintained > 94% quality compliance across simple-tier interactions monitored via the background verification loop.
+# 📊 Performance
+
+| Metric | Value |
+|---------|-------|
+| ML Classification Latency | **<15 ms** |
+| API Overhead | **Near Zero** |
+| Cost Reduction | **65–85%** |
+| Response Quality Retention | **94%+** |
+| Background Verification | **Asynchronous** |
+
+---
+
+# 💡 Why This Project?
+
+Traditional LLM applications send every prompt to the largest available model, resulting in unnecessarily high inference costs.
+
+LLM Cost Autopilot solves this problem by intelligently routing each request based on its predicted complexity, allowing organizations to:
+
+- Reduce production costs by up to **85%**
+- Maintain high response quality
+- Monitor model performance
+- Collect retraining data automatically
+- Scale AI applications more efficiently
+
+---
+
+# 🔮 Future Improvements
+
+- Support multiple providers (OpenAI, Anthropic, Gemini, Ollama)
+- Reinforcement learning from judge feedback
+- Adaptive routing using confidence scores
+- Semantic cache layer
+- Prompt embedding similarity search
+- Kubernetes deployment
+- Docker Compose support
+- Redis-based request queue
+- Grafana & Prometheus monitoring
+
+---
+
+# 📜 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+# 👨‍💻 Author
+
+**Prakhar Shakya**
+
+Electronics & Communication Engineering Student  
+Machine Learning • Backend Development • AI Systems • LLM Infrastructure
+
+---
+
+⭐ If you found this project useful, consider giving it a star!
